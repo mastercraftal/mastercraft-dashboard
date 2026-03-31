@@ -3,33 +3,39 @@ const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// 👇 THIS is your API key from Render
 const API_KEY = process.env.JOBNIMBUS_API_KEY;
 
-const BASE_URL = 'https://app.jobnimbus.com/api1';
+// Current JobNimbus Platform API base URL
+const BASE_URL = 'https://api.jobnimbus.com';
+
+// You may need to adjust the service/endpoint after the first test
+const SERVICE = 'jobs';
+const ENDPOINT = 'jobs';
 
 app.get('/api/jobs', async (req, res) => {
   try {
-    const response = await axios.get(`${BASE_URL}/jobs`, {
+    const url = `${BASE_URL}/${SERVICE}/v1/${ENDPOINT}`;
+    console.log('Requesting:', url);
+    console.log('API key present:', !!API_KEY);
+
+    const response = await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${API_KEY}`
+        Authorization: `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
       }
     });
 
-    const jobs = response.data.map(job => ({
-      jobNumber: job.number,
-      name: job.name,
-      status: job.status,
-      dueDate: job.end_date,
-      sub: job.assigned_to
-    }));
-
-    res.json(jobs);
-
+    res.json(response.data);
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).send('Error fetching jobs');
+    console.error('Status:', err.response?.status);
+    console.error('Data:', err.response?.data);
+    console.error('Message:', err.message);
+
+    res.status(500).json({
+      message: 'Error fetching jobs',
+      status: err.response?.status,
+      data: err.response?.data || null
+    });
   }
 });
 
