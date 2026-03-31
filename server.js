@@ -1,14 +1,42 @@
-const http = require('http');
+const express = require('express');
+const axios = require('axios');
 
-const hostname = '127.0.0.1';
-const port = 3000;
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello World!\n');
+// 👇 THIS is your API key from Render
+const API_KEY = process.env.JOBNIMBUS_API_KEY;
+
+const BASE_URL = 'https://app.jobnimbus.com/api1';
+
+app.get('/api/jobs', async (req, res) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/jobs`, {
+      headers: {
+        Authorization: `Bearer ${API_KEY}`
+      }
+    });
+
+    const jobs = response.data.map(job => ({
+      jobNumber: job.number,
+      name: job.name,
+      status: job.status,
+      dueDate: job.end_date,
+      sub: job.assigned_to
+    }));
+
+    res.json(jobs);
+
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).send('Error fetching jobs');
+  }
 });
 
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+app.get('/', (req, res) => {
+  res.send('MasterCraft Dashboard API is running');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
